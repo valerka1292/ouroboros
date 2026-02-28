@@ -150,14 +150,14 @@ class OuroborosAgent:
 
         def _normalize_status_path(line: str) -> str:
             # porcelain examples: " M path", "MM path", "R  old -> new", "?? path"
-            txt = (line or "").strip()
-            if " -> " in txt:
-                txt = txt.split(" -> ", 1)[1]
-            if len(txt) >= 3 and txt[1] == " ":
-                return txt[3:].strip()
-            if len(txt) >= 2 and txt[:2] in {"??", "!!"}:
-                return txt[2:].strip()
-            return txt[2:].strip() if len(txt) > 2 else txt
+            if not line or len(line) < 4:
+                return line.strip()
+            # Porcelain format always has exactly 2 chars of status, a space, then the path.
+            # E.g. ` M data/logs/events.jsonl`
+            path_part = line[3:].strip()
+            if " -> " in path_part:
+                return path_part.split(" -> ", 1)[1].strip()
+            return path_part
 
         ignored_prefixes = (
             "data/logs/",
@@ -306,14 +306,16 @@ class OuroborosAgent:
                 total_budget = float(total_budget_str)
                 spent = float(state_data.get("spent_usd", 0))
                 remaining = max(0, total_budget - spent)
+                
+                ratio = remaining / total_budget if total_budget > 0 else 0
 
-                if remaining < 10:
+                if ratio < 0.05:
                     status = "emergency"
                     issues = 1
-                elif remaining < 50:
+                elif ratio < 0.15:
                     status = "critical"
                     issues = 1
-                elif remaining < 100:
+                elif ratio < 0.25:
                     status = "warning"
                     issues = 0
                 else:
