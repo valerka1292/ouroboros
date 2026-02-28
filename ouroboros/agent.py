@@ -138,51 +138,94 @@ class OuroborosAgent:
             pass
 
     def _check_uncommitted_changes(self) -> Tuple[dict, int]:
-        """Check for uncommitted changes and attempt auto-rescue commit & push."""
+        """Check for uncommitted changes and optionally attempt auto-rescue commit & push.
+
+        In web mode logs are constantly appended, so they should not trigger rescue commits.
+        Auto-rescue is disabled by default and can be enabled with
+        OUROBOROS_AUTO_RESCUE_ON_STARTUP=1.
+        """
         import re
         import subprocess
+        from pathlib import Path
+
+        def _normalize_status_path(line: str) -> str:
+            # porcelain examples: " M path", "MM path", "R  old -> new", "?? path"
+            txt = (line or "").strip()
+            if " -> " in txt:
+                txt = txt.split(" -> ", 1)[1]
+            if len(txt) >= 3 and txt[1] == " ":
+                return txt[3:].strip()
+            if len(txt) >= 2 and txt[:2] in {"??", "!!"}:
+                return txt[2:].strip()
+            return txt[2:].strip() if len(txt) > 2 else txt
+
+        ignored_prefixes = (
+            "data/logs/",
+            "data/state/",
+            "data/task_results/",
+            "frontend/dist/",
+        )
+
+        auto_rescue_enabled = str(os.environ.get("OUROBOROS_AUTO_RESCUE_ON_STARTUP", "0")).strip().lower() in {
+            "1", "true", "yes", "on"
+        }
+
         try:
             result = subprocess.run(
                 ["git", "status", "--porcelain"],
                 cwd=str(self.env.repo_dir),
                 capture_output=True, text=True, timeout=10, check=True
             )
-            dirty_files = [l.strip() for l in result.stdout.strip().split('\n') if l.strip()]
+            raw_dirty = [l.strip() for l in result.stdout.strip().split('\n') if l.strip()]
+            dirty_files = []
+            for row in raw_dirty:
+                path = _normalize_status_path(row)
+                if not path:
+                    continue
+                p = Path(path).as_posix()
+                if any(p.startswith(pref) for pref in ignored_prefixes):
+                    continue
+                dirty_files.append(row)
+
             if dirty_files:
                 # Auto-rescue: commit and push
                 auto_committed = False
-                try:
-                    # Only stage tracked files (not secrets/notebooks)
-                    subprocess.run(["git", "add", "-u"], cwd=str(self.env.repo_dir), timeout=10, check=True)
-                    subprocess.run(
-                        ["git", "commit", "-m", "auto-rescue: uncommitted changes detected on startup"],
-                        cwd=str(self.env.repo_dir), timeout=30, check=True
-                    )
-                    # Validate branch name
-                    if not re.match(r'^[a-zA-Z0-9_/-]+$', self.env.branch_dev):
-                        raise ValueError(f"Invalid branch name: {self.env.branch_dev}")
-                    # Pull with rebase before push
-                    subprocess.run(
-                        ["git", "pull", "--rebase", "origin", self.env.branch_dev],
-                        cwd=str(self.env.repo_dir), timeout=60, check=True
-                    )
-                    # Push
+                if auto_rescue_enabled:
                     try:
+                        git_lock = self.env.repo_path(".git/index.lock")
+                        if git_lock.exists():
+                            raise RuntimeError("git index.lock exists; skip auto-rescue")
+                        # Only stage tracked files (not secrets/notebooks)
+                        subprocess.run(["git", "add", "-u"], cwd=str(self.env.repo_dir), timeout=10, check=True)
                         subprocess.run(
-                            ["git", "push", "origin", self.env.branch_dev],
+                            ["git", "commit", "-m", "auto-rescue: uncommitted changes detected on startup"],
+                            cwd=str(self.env.repo_dir), timeout=30, check=True
+                        )
+                        # Validate branch name
+                        if not re.match(r'^[a-zA-Z0-9_/-]+$', self.env.branch_dev):
+                            raise ValueError(f"Invalid branch name: {self.env.branch_dev}")
+                        # Pull with rebase before push
+                        subprocess.run(
+                            ["git", "pull", "--rebase", "origin", self.env.branch_dev],
                             cwd=str(self.env.repo_dir), timeout=60, check=True
                         )
-                        auto_committed = True
-                        log.warning(f"Auto-rescued {len(dirty_files)} uncommitted files on startup")
-                    except subprocess.CalledProcessError:
-                        # If push fails, undo the commit
-                        subprocess.run(
-                            ["git", "reset", "HEAD~1"],
-                            cwd=str(self.env.repo_dir), timeout=10, check=True
-                        )
-                        raise
-                except Exception as e:
-                    log.warning(f"Failed to auto-rescue uncommitted changes: {e}", exc_info=True)
+                        # Push
+                        try:
+                            subprocess.run(
+                                ["git", "push", "origin", self.env.branch_dev],
+                                cwd=str(self.env.repo_dir), timeout=60, check=True
+                            )
+                            auto_committed = True
+                            log.warning(f"Auto-rescued {len(dirty_files)} uncommitted files on startup")
+                        except subprocess.CalledProcessError:
+                            # If push fails, undo the commit
+                            subprocess.run(
+                                ["git", "reset", "HEAD~1"],
+                                cwd=str(self.env.repo_dir), timeout=10, check=True
+                            )
+                            raise
+                    except Exception as e:
+                        log.warning(f"Failed to auto-rescue uncommitted changes: {e}", exc_info=True)
                 return {
                     "status": "warning", "files": dirty_files[:20],
                     "auto_committed": auto_committed,

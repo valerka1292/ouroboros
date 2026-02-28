@@ -59,24 +59,72 @@ export function useOuroboros(pollingIntervalMs = 2000): UseOuroborosResult {
         isFetching.current = true;
 
         try {
-            const res = await fetch('/api/status');
-            if (!res.ok) throw new Error(`Status HTTP error! status: ${res.status}`);
-            const data = await res.json();
+            const [statusRes, eventsRes, supervisorRes] = await Promise.all([
+                fetch('/api/status'),
+                fetch('/api/logs/events'),
+                fetch('/api/logs/supervisor')
+            ]);
 
-            setStatus(data.status);
-            setChatHistory(data.chat_tail || []);
-            setProgressLogs(data.progress_tail || []);
-            setToolLogs(data.tools_tail || []);
+            if (!statusRes.ok) throw new Error(`Status HTTP error! status: ${statusRes.status}`);
+
+            const statusData = await statusRes.json();
+            const eventsData = eventsRes.ok ? await eventsRes.json() : { logs: [] };
+            const supervisorData = supervisorRes.ok ? await supervisorRes.json() : { logs: [] };
+
+            setStatus({
+                version: statusData.version || 'unknown',
+                session_active: statusData.consciousness_running ?? true,
+                budget_total: statusData.total_budget ?? 0,
+                budget_spent: statusData.spent_usd ?? 0,
+                workers: statusData.workers_alive ?? 0,
+                queue_size: statusData.pending_tasks ?? 0,
+                events: eventsData.logs || []
+            });
+
+            const events = Array.isArray(eventsData.logs) ? eventsData.logs : [];
+            const supervisorLogs = Array.isArray(supervisorData.logs) ? supervisorData.logs : [];
+
+            setChatHistory(
+                events
+                    .filter((entry: any) => entry?.type === 'owner_message_injected' || entry?.type === 'send_message')
+                    .map((entry: any) => ({
+                        direction: entry.type === 'send_message' ? 'in' : 'out',
+                        text: entry.text || entry.message || '(empty message)',
+                        ts: entry.ts || new Date().toISOString()
+                    }))
+            );
+
+            setProgressLogs(
+                events
+                    .slice(-100)
+                    .map((entry: any) => ({
+                        ts: entry.ts || new Date().toISOString(),
+                        text: `[${entry.type || 'event'}] ${entry.message || entry.reason || entry.error || ''}`.trim()
+                    }))
+            );
+
+            setToolLogs(
+                supervisorLogs
+                    .slice(-100)
+                    .map((entry: any) => ({
+                        timestamp: entry.ts,
+                        tool: entry.type,
+                        args: entry,
+                        error: entry.error
+                    }))
+            );
 
             // Basic heuristic for "Thinking" mode:
             // If the last thing is an outgoing progress log that doesn't look like a final answer,
             // or if there are active tools being run and no recent chat message from Ouroboros.
-            const lastProgress = data.progress_tail?.[data.progress_tail.length - 1];
-            const lastChat = data.chat_tail?.[data.chat_tail.length - 1];
+            const progress = eventsData.logs || [];
+            const chat = eventsData.logs || [];
+            const lastProgress = progress?.[progress.length - 1];
+            const lastChat = chat?.[chat.length - 1];
 
             // Simple logic: If we have recent progress but no matching chat output yet, we might be thinking.
             // (Can refine based on actual Ouroboros event signatures).
-            const hasRecentProgress = lastProgress && lastChat && new Date(lastProgress.ts).getTime() > new Date(lastChat.ts).getTime();
+            const hasRecentProgress = !!lastProgress && (!lastChat || new Date(lastProgress.ts).getTime() >= new Date(lastChat.ts).getTime());
             setIsThinking(!!hasRecentProgress);
 
             setError(null);
@@ -105,7 +153,7 @@ export function useOuroboros(pollingIntervalMs = 2000): UseOuroborosResult {
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text })
+                body: JSON.stringify({ text })
             });
             if (!res.ok) throw new Error('Failed to send message');
             await fetchState(); // Force immediate refresh
