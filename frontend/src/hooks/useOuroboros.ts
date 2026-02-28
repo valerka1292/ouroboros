@@ -117,14 +117,13 @@ export function useOuroboros(pollingIntervalMs = 2000): UseOuroborosResult {
             // Basic heuristic for "Thinking" mode:
             // If the last thing is an outgoing progress log that doesn't look like a final answer,
             // or if there are active tools being run and no recent chat message from Ouroboros.
-            const progress = eventsData.logs || [];
-            const chat = eventsData.logs || [];
-            const lastProgress = progress?.[progress.length - 1];
-            const lastChat = chat?.[chat.length - 1];
+            const chatEvents = events.filter((e: any) => e.type === 'send_message');
+            const progressEvents = events.filter((e: any) => e.type !== 'send_message' && e.type !== 'owner_message_injected');
+            const lastProgress = progressEvents.length > 0 ? progressEvents[progressEvents.length - 1] : null;
+            const lastChat = chatEvents.length > 0 ? chatEvents[chatEvents.length - 1] : null;
 
             // Simple logic: If we have recent progress but no matching chat output yet, we might be thinking.
-            // (Can refine based on actual Ouroboros event signatures).
-            const hasRecentProgress = !!lastProgress && (!lastChat || new Date(lastProgress.ts).getTime() >= new Date(lastChat.ts).getTime());
+            const hasRecentProgress = !!lastProgress && (!lastChat || new Date(lastProgress.ts).getTime() > new Date(lastChat.ts).getTime());
             setIsThinking(!!hasRecentProgress);
 
             setError(null);
