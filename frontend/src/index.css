@@ -1,12 +1,39 @@
+/* 
+  Ouroboros Premium Design System 
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 :root {
-  --primary: #00f2fe;
-  --primary-glow: rgba(0, 242, 254, 0.4);
-  --secondary: #4facfe;
-  --bg-dark: #070912;
-  --bg-card: #0f1225;
-  --text-main: #e2e8f0;
-  --text-dim: #94a3b8;
-  --border: rgba(255, 255, 255, 0.1);
+  /* Core Colors */
+  --bg-base: #020617;
+  /* Very dark blue/black slate */
+  --bg-surface: rgba(15, 23, 42, 0.6);
+  /* Translucent slate */
+  --bg-surface-hover: rgba(30, 41, 59, 0.8);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Accents */
+  --accent-cyan: #06b6d4;
+  --accent-cyan-glow: rgba(6, 182, 212, 0.3);
+  --accent-indigo: #6366f1;
+  --accent-indigo-glow: rgba(99, 102, 241, 0.3);
+  --accent-emerald: #10b981;
+  /* Success / Online */
+  --accent-rose: #f43f5e;
+  /* Error / Critical */
+
+  /* Borders & Glass */
+  --border-glass: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(16px);
+  --shadow-glow: 0 0 20px var(--accent-cyan-glow);
+
+  /* Layout */
+  --sidebar-width: 320px;
+  --header-height: 64px;
 }
 
 * {
@@ -16,36 +43,29 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--bg-dark);
-  color: var(--text-main);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
   overflow: hidden;
-  height: 100vh;
+  /* Subtle animated ambient gradient background */
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.08), transparent 25%);
+  background-attachment: fixed;
 }
 
-#root {
-  height: 100%;
+/* Base interactive elements */
+button {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
-.glass {
-  background: rgba(15, 18, 37, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-}
-
-.gradient-text {
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.glow {
-  box-shadow: 0 0 20px var(--primary-glow);
-}
-
+/* Custom Scrollbar for sleekness */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -54,9 +74,36 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Utility Animations */
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 10px var(--accent-cyan-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 25px var(--accent-cyan-glow);
+  }
+
+  100% {
+    box-shadow: 0 0 10px var(--accent-cyan-glow);
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
