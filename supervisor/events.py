@@ -61,9 +61,18 @@ def _handle_typing_start(evt: Dict[str, Any], ctx: Any) -> None:
 
 def _handle_send_message(evt: Dict[str, Any], ctx: Any) -> None:
     try:
-        log_text = evt.get("log_text")
-        # In web mode, we just log this. The frontend will poll events/chat logs.
-        log.info(f"[CHAT] {evt.get('text')}")
+        text = str(evt.get("text") or "")
+        # In web mode, persist outbound replies to the events log so frontend chat can render them.
+        ctx.append_jsonl(
+            ctx.DRIVE_ROOT / "logs" / "events.jsonl",
+            {
+                "ts": evt.get("ts") or datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "type": "send_message",
+                "chat_id": evt.get("chat_id"),
+                "text": text,
+            },
+        )
+        log.info(f"[CHAT] {text}")
     except Exception as e:
         ctx.append_jsonl(
             ctx.DRIVE_ROOT / "logs" / "supervisor.jsonl",
