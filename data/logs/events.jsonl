@@ -46,3 +46,6 @@
 {"ts": "2026-02-28T19:15:40.201257+00:00", "type": "consciousness_llm_error", "error": "NotFoundError('404 page not found')"}
 {"ts": "2026-02-28T19:18:03.794189+00:00", "type": "worker_boot", "pid": 5864, "git_branch": "main", "git_sha": "5fdbdc47bc4f186296007cff8233bda9fcd75b2c"}
 {"ts": "2026-02-28T19:18:03.811205+00:00", "type": "worker_boot", "pid": 9368, "git_branch": "main", "git_sha": "5fdbdc47bc4f186296007cff8233bda9fcd75b2c"}
+{"ts": "2026-02-28T19:18:03.894834+00:00", "type": "worker_boot", "pid": 7880, "git_branch": "main", "git_sha": "5fdbdc47bc4f186296007cff8233bda9fcd75b2c"}
+{"ts": "2026-02-28T19:18:04.059059+00:00", "type": "startup_verification", "checks": {"uncommitted_changes": {"status": "warning", "files": ["M data/logs/events.jsonl", "M data/logs/server.log", "M data/logs/supervisor.jsonl"], "auto_committed": false}, "version_sync": {"version_file": "6.2.0", "pyproject_version": "6.2.0", "readme_version": "6.2.0", "status": "warning", "message": "no_tags"}, "budget": {"status": "critical", "remaining_usd": 10.0, "total_usd": 10.0, "spent_usd": 0.0}}, "issues_count": 2, "git_sha": "5fdbdc47bc4f186296007cff8233bda9fcd75b2c"}
+{"ts": "2026-02-28T19:18:04.128853+00:00", "type": "worker_boot", "pid": 7308, "git_branch": "main", "git_sha": "5fdbdc47bc4f186296007cff8233bda9fcd75b2c"}

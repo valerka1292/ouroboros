@@ -273,3 +273,13 @@ subprocess.CalledProcessError: Command '['git', 'pull', '--rebase', 'origin', 'o
 2026-02-28 21:10:39,979 [WARNING] ouroboros.agent: Startup verification found 2 issue(s): {'uncommitted_changes': {'status': 'warning', 'files': ['M data/logs/events.jsonl', 'M data/logs/server.log', 'M data/logs/supervisor.jsonl'], 'auto_committed': False}, 'version_sync': {'version_file': '6.2.0', 'pyproject_version': '6.2.0', 'readme_version': '6.2.0', 'status': 'warning', 'message': 'no_tags'}, 'budget': {'status': 'critical', 'remaining_usd': 10.0, 'total_usd': 10.0, 'spent_usd': 0.0}}
 2026-02-28 21:15:40,199 [INFO] httpx: HTTP Request: POST https://integrate.api.nvidia.com/v1/chat/completions "HTTP/1.1 404 Not Found"
 2026-02-28 21:18:03,023 [INFO] ouroboros.server: Supervisor loop started
+2026-02-28 21:18:03,901 [WARNING] ouroboros.agent: Failed to auto-rescue uncommitted changes: Command '['git', 'add', '-u']' returned non-zero exit status 128.
+Traceback (most recent call last):
+  File "C:\Users\Administrator\Desktop\projects\ouroboros\ouroboros\agent.py", line 156, in _check_uncommitted_changes
+    subprocess.run(["git", "add", "-u"], cwd=str(self.env.repo_dir), timeout=10, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Local\Python\pythoncore-3.14-64\Lib\subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['git', 'add', '-u']' returned non-zero exit status 128.
+2026-02-28 21:18:04,062 [WARNING] ouroboros.agent: Startup verification found 2 issue(s): {'uncommitted_changes': {'status': 'warning', 'files': ['M data/logs/events.jsonl', 'M data/logs/server.log', 'M data/logs/supervisor.jsonl'], 'auto_committed': False}, 'version_sync': {'version_file': '6.2.0', 'pyproject_version': '6.2.0', 'readme_version': '6.2.0', 'status': 'warning', 'message': 'no_tags'}, 'budget': {'status': 'critical', 'remaining_usd': 10.0, 'total_usd': 10.0, 'spent_usd': 0.0}}
