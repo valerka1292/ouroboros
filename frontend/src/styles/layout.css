@@ -1,0 +1,59 @@
+/* Master Layout Structure */
+
+.layout-master {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
+}
+
+.layout-horizontal {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+}
+
+.layout-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    /* Prevents flex children from blowing out width */
+}
+
+.layout-chat {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.layout-logs {
+    height: 250px;
+    min-height: 250px;
+    max-height: 40vh;
+    z-index: 5;
+    transition: height 0.3s ease;
+}
+
+.global-error {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-rose);
+    color: white;
+    padding: 0.5rem 1.25rem;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4);
+    z-index: 100;
+    animation: slideUpFade 0.3s ease-out;
+}
