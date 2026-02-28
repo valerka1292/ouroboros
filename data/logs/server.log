@@ -134,3 +134,12 @@ subprocess.CalledProcessError: Command '['git', 'pull', '--rebase', 'origin', 'o
 2026-02-28 21:08:17,746 [INFO] ouroboros.server: Supervisor loop started
 2026-02-28 21:08:29,445 [INFO] ouroboros.server: Supervisor loop started
 2026-02-28 21:09:19,370 [INFO] ouroboros.server: Supervisor loop started
+2026-02-28 21:09:20,326 [WARNING] ouroboros.agent: Failed to auto-rescue uncommitted changes: Command '['git', 'add', '-u']' returned non-zero exit status 128.
+Traceback (most recent call last):
+  File "C:\Users\Administrator\Desktop\projects\ouroboros\ouroboros\agent.py", line 156, in _check_uncommitted_changes
+    subprocess.run(["git", "add", "-u"], cwd=str(self.env.repo_dir), timeout=10, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\AppData\Local\Python\pythoncore-3.14-64\Lib\subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['git', 'add', '-u']' returned non-zero exit status 128.
