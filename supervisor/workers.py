@@ -23,7 +23,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from supervisor.state import load_state, append_jsonl
 from supervisor import git_ops
-from supervisor.telegram import send_with_budget
 
 
 # ---------------------------------------------------------------------------
@@ -176,11 +175,9 @@ def handle_chat_direct(chat_id: int, text: str, image_data: Optional[Union[Tuple
                 "traceback": str(traceback.format_exc())[:2000],
             },
         )
-        try:
-            from supervisor.telegram import get_tg
-            get_tg().send_message(chat_id, err_msg)
-        except Exception:
-            log.debug("Suppressed exception", exc_info=True)
+        log.error(f"Direct chat error: {e}", exc_info=True)
+    except Exception:
+        log.debug("Suppressed exception", exc_info=True)
 
 
 # ---------------------------------------------------------------------------
@@ -398,11 +395,8 @@ def _verify_worker_sha_after_spawn(events_offset: int, timeout_sec: float = 90.0
             "worker_pid": boot_evt.get("pid"),
         },
     )
-    if not ok and st.get("owner_chat_id"):
-        send_with_budget(
-            int(st["owner_chat_id"]),
-            f"⚠️ Worker SHA mismatch after spawn: expected {expected_sha[:8]}, got {(observed_sha or 'unknown')[:8]}",
-        )
+    if not ok:
+        log.warning(f"Worker SHA mismatch after spawn: expected {expected_sha[:8]}, got {(observed_sha or 'unknown')[:8]}")
 
 
 def spawn_workers(n: int = 0) -> None:
@@ -505,12 +499,7 @@ def assign_tasks() -> None:
                 task_type = str(task.get("type") or "")
                 if task_type in ("evolution", "review"):
                     st = load_state()
-                    if st.get("owner_chat_id"):
-                        emoji = '🧬' if task_type == 'evolution' else '🔎'
-                        send_with_budget(
-                            int(st["owner_chat_id"]),
-                            f"{emoji} {task_type.capitalize()} task {task['id']} started.",
-                        )
+                    log.info(f"{task_type.capitalize()} task {task['id']} started.")
                 queue.persist_queue_snapshot(reason="assign_task")
 
 
@@ -575,12 +564,7 @@ def ensure_workers_healthy() -> None:
                 "worker_count": len(WORKERS),
             },
         )
-        if st.get("owner_chat_id"):
-            send_with_budget(
-                int(st["owner_chat_id"]),
-                "⚠️ Frequent worker crashes. Multiprocessing workers disabled, "
-                "continuing in direct-chat mode (threading).",
-            )
+        log.warning("Frequent worker crashes. Multiprocessing workers disabled, continuing in direct-chat mode (threading).")
         # Kill all workers — direct chat via handle_chat_direct still works
         kill_workers()
         CRASH_TS.clear()

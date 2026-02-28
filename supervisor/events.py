@@ -55,27 +55,15 @@ def _handle_task_heartbeat(evt: Dict[str, Any], ctx: Any) -> None:
 
 
 def _handle_typing_start(evt: Dict[str, Any], ctx: Any) -> None:
-    try:
-        chat_id = int(evt.get("chat_id") or 0)
-        if chat_id:
-            ctx.TG.send_chat_action(chat_id, "typing")
-    except Exception:
-        log.debug("Failed to send typing action to chat", exc_info=True)
-        pass
+    # No-op in web mode (frontend handles typing indicators via activity)
+    pass
 
 
 def _handle_send_message(evt: Dict[str, Any], ctx: Any) -> None:
     try:
         log_text = evt.get("log_text")
-        fmt = str(evt.get("format") or "")
-        is_progress = bool(evt.get("is_progress"))
-        ctx.send_with_budget(
-            int(evt["chat_id"]),
-            str(evt.get("text") or ""),
-            log_text=(str(log_text) if isinstance(log_text, str) else None),
-            fmt=fmt,
-            is_progress=is_progress,
-        )
+        # In web mode, we just log this. The frontend will poll events/chat logs.
+        log.info(f"[CHAT] {evt.get('text')}")
     except Exception as e:
         ctx.append_jsonl(
             ctx.DRIVE_ROOT / "logs" / "supervisor.jsonl",
@@ -174,18 +162,12 @@ def _handle_review_request(evt: Dict[str, Any], ctx: Any) -> None:
 
 
 def _handle_restart_request(evt: Dict[str, Any], ctx: Any) -> None:
-    st = ctx.load_state()
-    if st.get("owner_chat_id"):
-        ctx.send_with_budget(
-            int(st["owner_chat_id"]),
-            f"♻️ Restart requested by agent: {evt.get('reason')}",
-        )
+    log.info(f"Restart requested by agent: {evt.get('reason')}")
     ok, msg = ctx.safe_restart(
         reason="agent_restart_request", unsynced_policy="rescue_and_reset"
     )
     if not ok:
-        if st.get("owner_chat_id"):
-            ctx.send_with_budget(int(st["owner_chat_id"]), f"⚠️ Restart skipped: {msg}")
+        log.warning(f"Restart skipped: {msg}")
         return
     ctx.kill_workers()
     # Persist tg_offset/session_id before execv to avoid duplicate Telegram updates.
@@ -211,19 +193,9 @@ def _handle_promote_to_stable(evt: Dict[str, Any], ctx: Any) -> None:
             ["git", "rev-parse", f"origin/{ctx.BRANCH_STABLE}"],
             cwd=str(ctx.REPO_DIR), capture_output=True, text=True, check=True,
         ).stdout.strip()
-        st = ctx.load_state()
-        if st.get("owner_chat_id"):
-            ctx.send_with_budget(
-                int(st["owner_chat_id"]),
-                f"✅ Promoted: {ctx.BRANCH_DEV} → {ctx.BRANCH_STABLE} ({new_sha[:8]})",
-            )
+        log.info(f"Promoted: {ctx.BRANCH_DEV} → {ctx.BRANCH_STABLE} ({new_sha[:8]})")
     except Exception as e:
-        st = ctx.load_state()
-        if st.get("owner_chat_id"):
-            ctx.send_with_budget(
-                int(st["owner_chat_id"]),
-                f"❌ Failed to promote to stable: {e}",
-            )
+        log.error(f"Failed to promote to stable: {e}")
 
 
 def _find_duplicate_task(desc: str, pending: list, running: dict) -> Optional[str]:
@@ -302,7 +274,6 @@ def _handle_schedule_task(evt: Dict[str, Any], ctx: Any) -> None:
         dup_id = _find_duplicate_task(desc, PENDING, RUNNING)
         if dup_id:
             log.info("Rejected duplicate task: new='%s' duplicates='%s'", desc[:100], dup_id)
-            ctx.send_with_budget(int(owner_chat_id), f"⚠️ Task rejected: semantically similar to already active task {dup_id}")
             return
 
         tid = evt.get("task_id") or uuid.uuid4().hex[:8]
@@ -314,7 +285,7 @@ def _handle_schedule_task(evt: Dict[str, Any], ctx: Any) -> None:
         if parent_id:
             task["parent_task_id"] = parent_id
         ctx.enqueue_task(task)
-        ctx.send_with_budget(int(owner_chat_id), f"🗓️ Scheduled task {tid}: {desc}")
+        log.info(f"Scheduled task {tid}: {desc}")
         ctx.persist_queue_snapshot(reason="schedule_task_event")
 
 
@@ -323,11 +294,8 @@ def _handle_cancel_task(evt: Dict[str, Any], ctx: Any) -> None:
     st = ctx.load_state()
     owner_chat_id = st.get("owner_chat_id")
     ok = ctx.cancel_task_by_id(task_id) if task_id else False
-    if owner_chat_id:
-        ctx.send_with_budget(
-            int(owner_chat_id),
-            f"{'✅' if ok else '❌'} cancel {task_id or '?'} (event)",
-        )
+    if ok:
+        log.info(f"Cancelled task {task_id}")
 
 
 def _handle_toggle_evolution(evt: Dict[str, Any], ctx: Any) -> None:
@@ -340,9 +308,7 @@ def _handle_toggle_evolution(evt: Dict[str, Any], ctx: Any) -> None:
         ctx.PENDING[:] = [t for t in ctx.PENDING if str(t.get("type")) != "evolution"]
         ctx.sort_pending()
         ctx.persist_queue_snapshot(reason="evolve_off_via_tool")
-    if st.get("owner_chat_id"):
-        state_str = "ON" if enabled else "OFF"
-        ctx.send_with_budget(int(st["owner_chat_id"]), f"🧬 Evolution: {state_str} (via agent tool)")
+    log.info(f"Evolution: {state_str} (via agent tool)")
 
 
 def _handle_toggle_consciousness(evt: Dict[str, Any], ctx: Any) -> None:
@@ -355,9 +321,7 @@ def _handle_toggle_consciousness(evt: Dict[str, Any], ctx: Any) -> None:
     else:
         status = "running" if ctx.consciousness.is_running else "stopped"
         result = f"Background consciousness: {status}"
-    st = ctx.load_state()
-    if st.get("owner_chat_id"):
-        ctx.send_with_budget(int(st["owner_chat_id"]), f"🧠 {result}")
+    log.info(f"Background consciousness: {result}")
 
 
 def _handle_send_photo(evt: Dict[str, Any], ctx: Any) -> None:
@@ -369,17 +333,7 @@ def _handle_send_photo(evt: Dict[str, Any], ctx: Any) -> None:
         caption = str(evt.get("caption") or "")
         if not chat_id or not image_b64:
             return
-        photo_bytes = b64mod.b64decode(image_b64)
-        ok, err = ctx.TG.send_photo(chat_id, photo_bytes, caption=caption)
-        if not ok:
-            ctx.append_jsonl(
-                ctx.DRIVE_ROOT / "logs" / "supervisor.jsonl",
-                {
-                    "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                    "type": "send_photo_error",
-                    "chat_id": chat_id, "error": err,
-                },
-            )
+        log.info(f"Photo ready for UI (task_id: {evt.get('task_id')})")
     except Exception as e:
         ctx.append_jsonl(
             ctx.DRIVE_ROOT / "logs" / "supervisor.jsonl",

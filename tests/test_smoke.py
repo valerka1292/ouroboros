@@ -47,7 +47,7 @@ TOOL_MODULES = [
 
 SUPERVISOR_MODULES = [
     "supervisor.state",
-    "supervisor.telegram",
+    # "supervisor.telegram", -- REMOVED for SPA
     "supervisor.queue",
     "supervisor.workers",
     "supervisor.git_ops",

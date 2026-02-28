@@ -1,0 +1,11 @@
+{"ts": "2026-02-28T18:40:21.531099+00:00", "type": "worker_spawn_start", "start_method": "spawn", "count": 5}
+{"ts": "2026-02-28T18:40:21.549369+00:00", "type": "worker_sha_verify_skipped", "reason": "missing_current_sha"}
+{"ts": "2026-02-28T18:40:22.337836+00:00", "type": "worker_spawn_start", "start_method": "spawn", "count": 5}
+{"ts": "2026-02-28T18:40:22.369917+00:00", "type": "worker_spawn_start", "start_method": "spawn", "count": 5}
+{"ts": "2026-02-28T18:40:22.382151+00:00", "type": "worker_spawn_start", "start_method": "spawn", "count": 5}
+{"ts": "2026-02-28T18:40:22.475082+00:00", "type": "worker_spawn_start", "start_method": "spawn", "count": 5}
+{"ts": "2026-02-28T18:40:22.544585+00:00", "type": "worker_spawn_start", "start_method": "spawn", "count": 5}
+{"ts": "2026-02-28T18:40:41.167341+00:00", "type": "worker_spawn_start", "start_method": "spawn", "count": 5}
+{"ts": "2026-02-28T18:40:41.184157+00:00", "type": "worker_sha_verify_skipped", "reason": "missing_current_sha"}
+{"ts": "2026-02-28T18:40:52.978515+00:00", "type": "worker_spawn_start", "start_method": "spawn", "count": 5}
+{"ts": "2026-02-28T18:40:52.993246+00:00", "type": "worker_sha_verify_skipped", "reason": "missing_current_sha"}

@@ -67,7 +67,7 @@ class BackgroundConsciousness:
         # Budget tracking
         self._bg_spent_usd: float = 0.0
         self._bg_budget_pct: float = float(
-            os.environ.get("OUROBOROS_BG_BUDGET_PCT", "10")
+            os.environ.get("LLM_BG_BUDGET_PCT") or os.environ.get("OUROBOROS_BG_BUDGET_PCT", "10")
         )
 
     # -------------------------------------------------------------------
@@ -80,7 +80,7 @@ class BackgroundConsciousness:
 
     @property
     def _model(self) -> str:
-        return os.environ.get("OUROBOROS_MODEL_LIGHT", "") or DEFAULT_LIGHT_MODEL
+        return os.environ.get("LLM_MODEL_LIGHT") or os.environ.get("OUROBOROS_MODEL_LIGHT", "") or DEFAULT_LIGHT_MODEL
 
     def start(self) -> str:
         if self.is_running:
