@@ -21,3 +21,5 @@
 {"ts": "2026-02-28T19:09:19.386177+00:00", "type": "worker_sha_verify_skipped", "reason": "missing_current_sha"}
 {"ts": "2026-02-28T19:10:38.816648+00:00", "type": "worker_spawn_start", "start_method": "spawn", "count": 5}
 {"ts": "2026-02-28T19:10:38.830812+00:00", "type": "worker_sha_verify_skipped", "reason": "missing_current_sha"}
+{"ts": "2026-02-28T19:18:03.024556+00:00", "type": "worker_spawn_start", "start_method": "spawn", "count": 5}
+{"ts": "2026-02-28T19:18:03.038432+00:00", "type": "worker_sha_verify_skipped", "reason": "missing_current_sha"}
