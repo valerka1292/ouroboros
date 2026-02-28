@@ -176,7 +176,7 @@ class OuroborosAgent:
                 cwd=str(self.env.repo_dir),
                 capture_output=True, text=True, timeout=10, check=True
             )
-            raw_dirty = [l.strip() for l in result.stdout.strip().split('\n') if l.strip()]
+            raw_dirty = [l.rstrip('\r\n') for l in result.stdout.split('\n') if l.strip()]
             dirty_files = []
             for row in raw_dirty:
                 path = _normalize_status_path(row)
