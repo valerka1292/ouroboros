@@ -105,6 +105,13 @@ class LLMClient:
         choices = resp_dict.get("choices") or [{}]
         msg = (choices[0] if choices else {}).get("message") or {}
 
+        # Capture reasoning content (e.g. from DeepSeek-R1, QwQ, o1 via OpenAI schema)
+        reasoning = msg.get("reasoning_content")
+        if reasoning and msg.get("content") is not None:
+            msg["content"] = f"<reasoning>\n{reasoning}\n</reasoning>\n\n" + msg["content"]
+        elif reasoning and not msg.get("content"):
+            msg["content"] = f"<reasoning>\n{reasoning}\n</reasoning>"
+
         # Extract cached_tokens from prompt_tokens_details if available
         if not usage.get("cached_tokens"):
             prompt_details = usage.get("prompt_tokens_details") or {}
