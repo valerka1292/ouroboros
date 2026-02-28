@@ -185,6 +185,15 @@ async def post_chat(req: ChatRequest):
         "text": req.text,
     }
     enqueue_task(task)
+    append_jsonl(
+        DRIVE_ROOT / "logs" / "events.jsonl",
+        {
+            "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "type": "owner_message_injected",
+            "text": req.text,
+            "task_id": task["id"],
+        },
+    )
     return {"task_id": task["id"], "status": "queued"}
 
 @app.get("/api/logs/events")
